@@ -1,6 +1,6 @@
-# Evereign Oculus
+# Starhaven Oculus
 
-Oculus is Evereign's account and control-plane API. It owns player registration and authentication. The authoritative Node.js game servers own gameplay simulation.
+Oculus is Starhaven's account and control-plane API. It owns player registration and authentication. The authoritative Node.js game servers own gameplay simulation.
 
 No Laravel starter kit is installed. The API uses Laravel Sanctum bearer tokens.
 
@@ -48,7 +48,7 @@ Log in with `POST /api/auth/login`:
 {
 	"email": "player@example.com",
 	"password": "password123",
-	"device_name": "evereign-client"
+	"device_name": "starhaven-client"
 }
 ```
 

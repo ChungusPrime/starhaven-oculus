@@ -37,15 +37,66 @@ class GameTicketApiTest extends TestCase
             ->postJson('/api/internal/game-tickets/consume', ['ticket' => $plainTextTicket])
             ->assertOk()
             ->assertJsonPath('data.user.id', $user->id)
-            ->assertJsonPath('data.user.name', $user->name);
+            ->assertJsonPath('data.user.username', $user->username);
 
         $this->assertNotNull($consumed);
-        $this->assertDatabaseMissing('game_tickets', ['token_hash' => $plainTextTicket]);
-        $this->assertNotNull(GameTicket::first()->consumed_at);
+
+        // The database stores a hash rather than the plaintext credential that
+        // travelled through the client and game server.
+        $storedTicket = GameTicket::query()->firstOrFail();
+        $this->assertNotSame($plainTextTicket, $storedTicket->token_hash);
+        $this->assertNotNull($storedTicket->consumed_at);
 
         $this->withToken('test-game-server-token')
             ->postJson('/api/internal/game-tickets/consume', ['ticket' => $plainTextTicket])
             ->assertUnauthorized();
+    }
+
+    public function test_an_expired_ticket_is_rejected_even_before_cleanup_deletes_it(): void
+    {
+        $user = User::factory()->create();
+        $accessToken = $user->createToken('test-client', ['game-ticket:create'])->plainTextToken;
+
+        $created = $this->withToken($accessToken)
+            ->postJson('/api/game-tickets')
+            ->assertCreated();
+
+        $plainTextTicket = $created->json('data.ticket');
+
+        // Move beyond the configured 60-second lifetime. The row still exists,
+        // proving validity does not depend on waiting for the hourly prune job.
+        $this->travel(61)->seconds();
+        $this->assertDatabaseCount('game_tickets', 1);
+
+        $this->withToken('test-game-server-token')
+            ->postJson('/api/internal/game-tickets/consume', ['ticket' => $plainTextTicket])
+            ->assertUnauthorized();
+
+        $this->assertNull(GameTicket::query()->firstOrFail()->consumed_at);
+    }
+
+    public function test_the_prune_command_deletes_only_expired_tickets(): void
+    {
+        $user = User::factory()->create();
+
+        $expiredTicket = GameTicket::create([
+            'user_id' => $user->id,
+            'token_hash' => str_repeat('a', 64),
+            'expires_at' => now()->subSecond(),
+        ]);
+
+        $activeTicket = GameTicket::create([
+            'user_id' => $user->id,
+            'token_hash' => str_repeat('b', 64),
+            'expires_at' => now()->addMinute(),
+        ]);
+
+        $this->artisan('model:prune', [
+            '--model' => [GameTicket::class],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseMissing('game_tickets', ['id' => $expiredTicket->id]);
+        $this->assertDatabaseHas('game_tickets', ['id' => $activeTicket->id]);
     }
 
     public function test_a_token_without_the_game_ticket_ability_is_forbidden(): void

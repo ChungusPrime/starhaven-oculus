@@ -7,3 +7,545 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@layer base {
+    .register-page {
+        --void: #030713;
+        --surface: #071225;
+        --surface-raised: #0b1930;
+        --line: #1c3452;
+        --line-bright: #315b84;
+        --text: #e7eff9;
+        --muted: #8194ab;
+        --signal: #62c9f3;
+        --signal-dark: #123a58;
+        --amber: #e9b769;
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        padding: clamp(18px, 4vh, 42px) clamp(14px, 3vw, 40px);
+        color: var(--text);
+        background-color: var(--void);
+        background-image:
+            linear-gradient(rgba(98, 201, 243, 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(98, 201, 243, 0.035) 1px, transparent 1px);
+        background-size: 48px 48px;
+        font-family: 'Instrument Sans', sans-serif;
+    }
+
+    .register-page *,
+    .register-page *::before,
+    .register-page *::after {
+        box-sizing: border-box;
+    }
+
+    .register-page button,
+    .register-page input {
+        font: inherit;
+    }
+}
+
+@layer components {
+    .register-shell {
+        position: relative;
+        display: grid;
+        grid-template-rows: 28px auto 1fr auto;
+        width: min(1080px, 100%);
+        margin: 0 auto;
+        overflow: hidden;
+        background: rgba(5, 14, 30, .97);
+        border: 1px solid var(--line-bright);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, .38);
+    }
+
+    .screen-chrome {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        color: #536b85;
+        background: #061020;
+        border-bottom: 1px solid var(--line);
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .55rem;
+        letter-spacing: .08em;
+    }
+
+    .screen-controls {
+        display: flex;
+        gap: 5px;
+    }
+
+    .screen-controls i {
+        width: 6px;
+        height: 6px;
+        background: var(--line-bright);
+    }
+
+    .screen-controls i:first-child {
+        background: var(--signal);
+    }
+
+    .site-header,
+    .site-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-inline: clamp(22px, 4vw, 44px);
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        letter-spacing: 0;
+    }
+
+    .site-header {
+        min-height: 68px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 13px;
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    .brand-mark {
+        width: 38px;
+        height: 38px;
+        overflow: visible;
+        fill: none;
+        stroke: var(--signal);
+        stroke-width: 1.5;
+    }
+
+    .brand-mark path:nth-child(2) {
+        fill: rgba(98, 201, 243, 0.09);
+    }
+
+    .brand-mark circle {
+        fill: var(--amber);
+        stroke: none;
+    }
+
+    .brand span {
+        display: grid;
+        gap: 2px;
+    }
+
+    .brand strong {
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: .12em;
+    }
+
+    .brand small,
+    .network-state {
+        color: var(--muted);
+        font-size: .64rem;
+        letter-spacing: .08em;
+    }
+
+    .network-state {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .network-pulse {
+        width: 7px;
+        height: 7px;
+        background: var(--signal);
+        box-shadow: 0 0 8px rgba(98, 201, 243, .6);
+    }
+
+    .register-main {
+        display: grid;
+        grid-template-columns: minmax(0, .88fr) minmax(400px, 1.12fr);
+        align-items: stretch;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .register-intro {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-height: 500px;
+        padding: 42px clamp(28px, 4vw, 48px);
+        border-right: 1px solid var(--line);
+    }
+
+    .eyebrow,
+    .panel-heading > p,
+    .success-state > p {
+        margin: 0 0 16px;
+        color: var(--signal);
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .13em;
+    }
+
+    .eyebrow span {
+        display: inline-grid;
+        width: 28px;
+        height: 22px;
+        margin-right: 10px;
+        place-items: center;
+        color: var(--void);
+        background: var(--signal);
+    }
+
+    .register-intro h1 {
+        max-width: 660px;
+        margin: 0;
+        font-size: clamp(2.35rem, 4vw, 3.65rem);
+        font-weight: 500;
+        line-height: .98;
+        letter-spacing: 0;
+    }
+
+    .intro-copy {
+        max-width: 550px;
+        margin: 20px 0 0;
+        color: #a8b4b0;
+        font-size: .96rem;
+        line-height: 1.55;
+    }
+
+    .signal-map {
+        position: relative;
+        width: min(390px, 72%);
+        aspect-ratio: 2.2 / 1;
+        margin: 28px 0 24px;
+        border-bottom: 1px solid var(--line);
+        opacity: .8;
+    }
+
+    .orbit {
+        position: absolute;
+        top: 50%;
+        left: 37%;
+        border: 1px solid var(--line-bright);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) rotate(-10deg);
+    }
+
+    .orbit-one { width: 140px; height: 65px; }
+    .orbit-two { width: 225px; height: 112px; opacity: .5; }
+
+    .signal-core,
+    .signal-node {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        background: var(--signal);
+        box-shadow: 0 0 14px rgba(117, 230, 193, .8);
+    }
+
+    .signal-core { top: calc(50% - 5px); left: calc(37% - 5px); width: 10px; height: 10px; }
+    .node-one { top: 21%; left: 67%; }
+    .node-two { top: 72%; left: 78%; background: var(--amber); box-shadow: 0 0 14px rgba(233, 183, 105, .8); }
+    .node-three { top: 38%; left: 11%; }
+
+    .signal-line {
+        position: absolute;
+        height: 1px;
+        background: var(--line-bright);
+        transform-origin: left;
+    }
+
+    .line-one { top: 50%; left: 38%; width: 32%; transform: rotate(-14deg); }
+    .line-two { top: 51%; left: 38%; width: 42%; transform: rotate(19deg); }
+
+    .identity-notes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 530px;
+        margin: auto 0 0;
+    }
+
+    .identity-notes div {
+        padding-left: 16px;
+        border-left: 2px solid var(--signal-dark);
+    }
+
+    .identity-notes dt {
+        margin-bottom: 5px;
+        color: var(--muted);
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .61rem;
+        letter-spacing: .1em;
+    }
+
+    .identity-notes dd {
+        margin: 0;
+        font-size: .84rem;
+    }
+
+    .registration-panel {
+        position: relative;
+        min-height: 500px;
+        padding: 28px clamp(28px, 4vw, 48px);
+        background: var(--surface);
+        border: 0;
+    }
+
+    .registration-panel::before,
+    .registration-panel::after {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        content: '';
+        pointer-events: none;
+    }
+
+    .registration-panel::before { top: -1px; left: -1px; border-top: 2px solid var(--signal); border-left: 2px solid var(--signal); }
+    .registration-panel::after { right: -1px; bottom: -1px; border-right: 2px solid var(--amber); border-bottom: 2px solid var(--amber); }
+
+    .panel-index {
+        margin-bottom: 20px;
+        color: #52635e;
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .62rem;
+        letter-spacing: .12em;
+        text-align: right;
+    }
+
+    .panel-heading h2,
+    .success-state h2 {
+        margin: 0;
+        font-size: clamp(1.7rem, 3vw, 2.35rem);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .panel-heading > p { margin-bottom: 10px; }
+    .panel-heading > span { display: block; margin-top: 9px; color: var(--muted); font-size: .84rem; }
+
+    .registration-form {
+        display: grid;
+        gap: 16px;
+        margin-top: 24px;
+    }
+
+    .field-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #a7b5b0;
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .67rem;
+        letter-spacing: .1em;
+    }
+
+    .input-frame {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        background: #070d0c;
+    }
+
+    .input-frame:focus-within {
+        border-color: var(--signal);
+        box-shadow: 0 0 0 2px rgba(98, 201, 243, .08);
+    }
+
+    .input-prefix {
+        display: grid;
+        place-items: center;
+        color: #52635e;
+        border-right: 1px solid var(--line);
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .62rem;
+        letter-spacing: .08em;
+    }
+
+    .input-frame input {
+        width: 100%;
+        min-width: 0;
+        padding: 0 14px;
+        color: var(--text);
+        background: transparent;
+        border: 0;
+        outline: 0;
+    }
+
+    .input-frame input::placeholder { color: #4e5d58; }
+
+    .password-toggle {
+        min-width: 58px;
+        padding: 0 10px;
+        color: var(--muted);
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .61rem;
+        letter-spacing: .06em;
+    }
+
+    .password-toggle:hover { color: var(--signal); }
+
+    .field-meta,
+    .strength-meter {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 7px;
+        color: #697a74;
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .58rem;
+        letter-spacing: .04em;
+    }
+
+    .field-meta { justify-content: space-between; }
+
+    .strength-meter > span {
+        width: 30px;
+        height: 2px;
+        background: var(--line);
+    }
+
+    .strength-meter > span.active { background: var(--signal); }
+    .strength-meter small { margin-left: 5px; font-size: inherit; }
+
+    .field-error {
+        min-height: 14px;
+        margin: 4px 0 -10px;
+        color: #f28b76;
+        font-size: .7rem;
+    }
+
+    .input-frame.has-error { border-color: #a95748; }
+
+    .form-alert {
+        padding: 10px 12px;
+        color: #f2b3a5;
+        background: rgba(169, 87, 72, .12);
+        border-left: 2px solid #a95748;
+        font-size: .76rem;
+    }
+
+    .submit-button,
+    .secondary-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        border: 0;
+        cursor: pointer;
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: .73rem;
+        font-weight: 700;
+        letter-spacing: .1em;
+    }
+
+    .submit-button {
+        justify-content: space-between;
+        padding: 0 18px 0 22px;
+        color: #07100f;
+        background: var(--signal);
+    }
+
+    .submit-button:hover { background: #8bd8f6; }
+    .submit-button:disabled { cursor: wait; opacity: .6; }
+    .submit-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+    .security-note {
+        display: flex;
+        gap: 8px;
+        margin: 22px 0 0;
+        color: #62716d;
+        font-size: .68rem;
+        line-height: 1.5;
+    }
+
+    .security-note span { color: var(--amber); }
+
+    .success-state {
+        display: grid;
+        align-content: center;
+        min-height: 500px;
+        text-align: center;
+    }
+
+    .success-state[hidden] { display: none; }
+
+    .success-mark {
+        display: grid;
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 26px;
+        place-items: center;
+        color: var(--signal);
+        border: 1px solid var(--signal);
+        font-size: 1.8rem;
+        background: rgba(98, 201, 243, .06);
+    }
+
+    .success-state > p { margin-bottom: 12px; }
+    .success-state > span { max-width: 390px; margin: 18px auto 28px; color: var(--muted); line-height: 1.6; }
+
+    .secondary-button {
+        width: 100%;
+        color: var(--signal);
+        background: transparent;
+        border: 1px solid var(--line-bright);
+    }
+
+    .admin-logout {
+        min-height: 36px;
+        padding-inline: 16px;
+    }
+
+    .admin-main {
+        min-height: 500px;
+        padding: clamp(42px, 8vw, 88px);
+    }
+
+    .admin-main h1 {
+        margin: 0;
+        font-size: clamp(2.4rem, 6vw, 4.8rem);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .site-footer {
+        min-height: 40px;
+        color: #52605c;
+        border-top: 1px solid var(--line);
+        font-size: .58rem;
+        letter-spacing: .08em;
+    }
+
+    @media (max-width: 900px) {
+        .register-page { padding-block: 20px; }
+        .register-shell { width: min(680px, 100%); }
+        .register-main { grid-template-columns: 1fr; }
+        .register-intro { min-height: auto; padding: 32px 32px 38px; border-right: 0; border-bottom: 1px solid var(--line); }
+        .register-intro h1 { max-width: 610px; }
+        .signal-map { margin-block: 34px 24px; }
+        .registration-panel { min-height: auto; }
+    }
+
+    @media (max-width: 560px) {
+        .register-page { padding: 10px; }
+        .site-header { min-height: 64px; padding-inline: 16px; }
+        .brand small, .network-state { display: none; }
+        .register-main { width: 100%; }
+        .register-intro { padding: 26px 20px 30px; }
+        .register-intro h1 { font-size: 2.35rem; }
+        .intro-copy { font-size: .96rem; }
+        .signal-map { width: 88%; }
+        .identity-notes { gap: 18px; }
+        .identity-notes dd { font-size: .76rem; }
+        .registration-panel { padding: 26px 20px 30px; }
+        .panel-index { margin-bottom: 24px; }
+        .input-frame { grid-template-columns: 44px minmax(0, 1fr) auto; }
+        .site-footer { justify-content: center; padding-inline: 16px; text-align: center; }
+        .site-footer span:last-child { display: none; }
+    }
+
+}

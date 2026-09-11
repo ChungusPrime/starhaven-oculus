@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Character;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -19,34 +21,39 @@ class AuthController extends Controller {
 
     public function register(Request $request): JsonResponse {
 
+        $request->merge([
+            'username' => Str::lower(trim((string) $request->input('username'))),
+        ]);
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'username' => ['required', 'string', 'min:3', 'max:32', 'regex:/^[a-z0-9_]+$/', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'username' => $validated['username'],
             'password' => $validated['password'],
         ]);
 
         return response()->json(['success' => true], Response::HTTP_CREATED);
     }
 
-    public function login(Request $request): JsonResponse
-    {
+    public function login(Request $request): JsonResponse {
+        $request->merge([
+            'username' => Str::lower(trim((string) $request->input('username'))),
+        ]);
+
         $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
             'device_name' => ['required', 'string', 'max:255'],
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = User::where('username', $validated['username'])->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'username' => ['The provided credentials are incorrect.'],
             ]);
         }
 
@@ -99,6 +106,7 @@ class AuthController extends Controller {
         return response()->json([
             'data' => [
                 'user' => $user,
+                'characters' => $user->characters,
                 'token' => [
                     'access_token' => $token->plainTextToken,
                     'token_type' => 'Bearer',
@@ -107,4 +115,50 @@ class AuthController extends Controller {
             ],
         ], $status);
     }
+
+    public function createCharacter(Request $request): JsonResponse {
+
+        $validated = $request->validate([
+            'character_name' => ['required', 'string', 'max:255'],
+            'character_class' => ['required', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+
+        $characterName = $validated['character_name'];
+        $characterClass = $validated['character_class'];
+
+        // create new character instance (if needed)
+        $character = new Character();
+
+        $character->name = $characterName;
+
+        $character->user_id = $user->id;
+
+        $character->user()->associate($user);
+
+        $character->data = json_encode([
+            'level' => 1,
+            'experience' => 0,
+            'class' => $characterClass,
+            'inventory' => [],
+            'skills' => [],
+            'quests' => [],
+            'achievements' => [],
+            'friends' => [],
+            'settings' => [],
+            'reputation' => 0,
+            'currency' => 0,
+            'region' => "Starhaven Pioneer Base"
+        ]);
+
+        $character->save();
+
+        return response()->json([
+            'success' => true,
+            'character' => $character,
+        ], Response::HTTP_OK);
+
+    }
+
 }
