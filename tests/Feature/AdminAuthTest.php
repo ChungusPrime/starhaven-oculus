@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class AdminAuthTest extends TestCase
@@ -18,7 +19,11 @@ class AdminAuthTest extends TestCase
     {
         $this->get('/admin')
             ->assertOk()
-            ->assertViewIs('admin.login');
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('Admin/Login')
+                    ->where('username', ''),
+            );
     }
 
     public function test_guests_are_redirected_from_the_admin_dashboard(): void
@@ -40,7 +45,11 @@ class AdminAuthTest extends TestCase
 
         $this->get('/admin/dashboard')
             ->assertOk()
-            ->assertSee('Command network');
+            ->assertInertia(
+                fn (Assert $page) => $page
+                    ->component('Admin/Dashboard')
+                    ->where('username', 'oculus_admin'),
+            );
     }
 
     public function test_invalid_credentials_do_not_create_an_admin_session(): void

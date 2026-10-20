@@ -16,6 +16,12 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->json('missions')->nullable();
+            $table->json('achievements')->nullable();
+            $table->json('storage')->nullable();
+            $table->json('settings')->nullable();
+            $table->json('ownership')->nullable();
+            $table->integer('scrip')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

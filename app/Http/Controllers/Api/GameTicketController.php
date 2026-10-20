@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Character;
 use App\Models\GameTicket;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 
 class GameTicketController extends Controller
 {
+    private const INVALID_TICKET_MESSAGE = 'Invalid or expired game ticket.';
+
     public function store(Request $request): JsonResponse
     {
         // The player authenticates this request with their normal Oculus access
@@ -22,6 +25,10 @@ class GameTicketController extends Controller
 
         if (! $user->tokenCan('game-ticket:create')) {
             abort(403, 'This access token cannot create game tickets.');
+        }
+
+        if (! $user->activeCharacter()->exists()) {
+            abort(409, 'Create an active character before joining a universe.');
         }
 
         // A ticket has two pieces: a public database UUID and a secret. Only the
@@ -68,78 +75,66 @@ class GameTicketController extends Controller
             'ticket' => ['required', 'string', 'max:128'],
         ]);
 
-        // Tickets must contain exactly one separator: "UUID.secret". Keeping the
-        // parsing explicit makes malformed values such as "UUID.secret.extra"
-        // unambiguously invalid instead of silently treating "secret.extra" as
-        // the secret portion.
-        $plainTextTicket = $validated['ticket'];
-        $ticketParts = explode('.', $plainTextTicket);
+        [$ticketId, $secret] = $this->parseTicket($validated['ticket']);
+        [$ticket, $character] = DB::transaction(
+            fn (): array => $this->consumeTicket($ticketId, $secret)
+        );
+        $user = $ticket->user;
 
-        if (count($ticketParts) !== 2) {
-            throw new AuthenticationException('Invalid or expired game ticket.');
-        }
-
-        $ticketId = $ticketParts[0];
-        $secret = $ticketParts[1];
-
-        if (! Str::isUuid($ticketId) || $secret === '') {
-            throw new AuthenticationException('Invalid or expired game ticket.');
-        }
-
-        // Validation and consumption happen in one database transaction. The
-        // row lock means two game servers cannot successfully consume the same
-        // ticket at the same time: one request holds the lock, marks the ticket
-        // consumed, and commits before the other request can inspect the row.
-        $ticket = DB::transaction(function () use ($ticketId, $secret): GameTicket {
-            $ticket = GameTicket::query()->lockForUpdate()->find($ticketId);
-
-            // Every rejection intentionally returns the same message. Revealing
-            // whether an ID exists, has expired, or was already consumed would
-            // give an attacker information about otherwise private tickets.
-            if ($ticket === null) {
-                throw new AuthenticationException('Invalid or expired game ticket.');
-            }
-
-            // A non-NULL consumed_at value means this one-time ticket has already
-            // authenticated a socket and must never authenticate another one.
-            if ($ticket->consumed_at !== null) {
-                throw new AuthenticationException('Invalid or expired game ticket.');
-            }
-
-            // The validity date is checked here, at the moment of consumption.
-            // Merely finding a row in the database does not make a ticket valid.
-            if ($ticket->expires_at->isPast()) {
-                throw new AuthenticationException('Invalid or expired game ticket.');
-            }
-
-            // Hash the presented secret and compare hashes in constant time.
-            // hash_equals avoids leaking how much of the hash matched through
-            // small response-time differences.
-            $presentedSecretHash = hash('sha256', $secret);
-
-            if (! hash_equals($ticket->token_hash, $presentedSecretHash)) {
-                throw new AuthenticationException('Invalid or expired game ticket.');
-            }
-
-            // Marking the row is the actual consumption step. It happens before
-            // the transaction commits, while the row is still locked.
-            $consumedAt = now();
-            $ticket->update(['consumed_at' => $consumedAt]);
-
-            return $ticket;
-        });
-
-        // The plaintext ticket never identifies a character or universe. It
-        // authenticates the Oculus user only. The game server receives this user
-        // identity and separately handles the selected character from the socket
-        // handshake query.
         return response()->json([
-            'data' => [
-                'user' => [
-                    'id' => $ticket->user->id,
-                    'username' => $ticket->user->username,
-                ],
-            ],
+            'data' => compact('user', 'character'),
         ]);
+    }
+
+    /**
+     * @return array{string, string}
+     *
+     * @throws AuthenticationException
+     */
+    private function parseTicket(string $plainTextTicket): array
+    {
+        $parts = explode('.', $plainTextTicket);
+
+        if (count($parts) !== 2 || ! Str::isUuid($parts[0]) || $parts[1] === '') {
+            $this->rejectTicket();
+        }
+
+        return [$parts[0], $parts[1]];
+    }
+
+    /**
+     * @return array{GameTicket, Character}
+     *
+     * @throws AuthenticationException
+     */
+    private function consumeTicket(string $ticketId, string $secret): array
+    {
+        // The row lock keeps validation and one-time consumption atomic.
+        $ticket = GameTicket::query()->lockForUpdate()->find($ticketId);
+
+        if ($ticket === null
+            || $ticket->consumed_at !== null
+            || $ticket->expires_at->isPast()
+            || ! hash_equals($ticket->token_hash, hash('sha256', $secret))) {
+            $this->rejectTicket();
+        }
+
+        $character = $ticket->user->activeCharacter()->first();
+
+        if ($character === null) {
+            $this->rejectTicket();
+        }
+
+        $ticket->update(['consumed_at' => now()]);
+
+        return [$ticket, $character];
+    }
+
+    /**
+     * @throws AuthenticationException
+     */
+    private function rejectTicket(): never
+    {
+        throw new AuthenticationException(self::INVALID_TICKET_MESSAGE);
     }
 }

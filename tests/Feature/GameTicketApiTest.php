@@ -24,6 +24,11 @@ class GameTicketApiTest extends TestCase
     public function test_a_player_can_create_and_a_game_server_can_consume_a_ticket(): void
     {
         $user = User::factory()->create();
+        $character = $user->characters()->create([
+            'name' => 'UNIT#ABC-123-XYZ',
+            'status' => 'active',
+            'area' => 'Starhaven Pioneer Base',
+        ]);
         $accessToken = $user->createToken('test-client', ['game-ticket:create'])->plainTextToken;
 
         $created = $this->withToken($accessToken)
@@ -37,7 +42,10 @@ class GameTicketApiTest extends TestCase
             ->postJson('/api/internal/game-tickets/consume', ['ticket' => $plainTextTicket])
             ->assertOk()
             ->assertJsonPath('data.user.id', $user->id)
-            ->assertJsonPath('data.user.username', $user->username);
+            ->assertJsonPath('data.user.username', $user->username)
+            ->assertJsonPath('data.character.id', $character->id)
+            ->assertJsonPath('data.character.name', $character->name)
+            ->assertJsonPath('data.character.status', 'active');
 
         $this->assertNotNull($consumed);
 
@@ -55,6 +63,10 @@ class GameTicketApiTest extends TestCase
     public function test_an_expired_ticket_is_rejected_even_before_cleanup_deletes_it(): void
     {
         $user = User::factory()->create();
+        $user->characters()->create([
+            'name' => 'UNIT#ABC-123-XYZ',
+            'status' => 'active',
+        ]);
         $accessToken = $user->createToken('test-client', ['game-ticket:create'])->plainTextToken;
 
         $created = $this->withToken($accessToken)
@@ -67,6 +79,41 @@ class GameTicketApiTest extends TestCase
         // proving validity does not depend on waiting for the hourly prune job.
         $this->travel(61)->seconds();
         $this->assertDatabaseCount('game_tickets', 1);
+
+        $this->withToken('test-game-server-token')
+            ->postJson('/api/internal/game-tickets/consume', ['ticket' => $plainTextTicket])
+            ->assertUnauthorized();
+
+        $this->assertNull(GameTicket::query()->firstOrFail()->consumed_at);
+    }
+
+    public function test_a_player_without_an_active_character_cannot_create_a_ticket(): void
+    {
+        $user = User::factory()->create();
+        $accessToken = $user->createToken('test-client', ['game-ticket:create'])->plainTextToken;
+
+        $this->withToken($accessToken)
+            ->postJson('/api/game-tickets')
+            ->assertStatus(409);
+
+        $this->assertDatabaseCount('game_tickets', 0);
+    }
+
+    public function test_a_ticket_cannot_be_consumed_after_its_character_becomes_inactive(): void
+    {
+        $user = User::factory()->create();
+        $character = $user->characters()->create([
+            'name' => 'UNIT#ABC-123-XYZ',
+            'status' => 'active',
+        ]);
+        $accessToken = $user->createToken('test-client', ['game-ticket:create'])->plainTextToken;
+
+        $plainTextTicket = $this->withToken($accessToken)
+            ->postJson('/api/game-tickets')
+            ->assertCreated()
+            ->json('data.ticket');
+
+        $character->update(['status' => 'inactive']);
 
         $this->withToken('test-game-server-token')
             ->postJson('/api/internal/game-tickets/consume', ['ticket' => $plainTextTicket])

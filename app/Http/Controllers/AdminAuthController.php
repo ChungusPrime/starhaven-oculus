@@ -4,21 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
-class AdminAuthController extends Controller
-{
-    public function create(Request $request): View|RedirectResponse
-    {
+class AdminAuthController extends Controller {
+
+    public function create(Request $request): Response|RedirectResponse {
         if ($request->session()->get('admin.authenticated') === true) {
             return redirect()->route('admin.dashboard');
         }
 
-        return view('admin.login');
+        return Inertia::render('Admin/Login', [
+            'username' => (string) $request->old('username', ''),
+        ]);
     }
 
-    public function store(Request $request): RedirectResponse
-    {
+    public function store(Request $request): RedirectResponse {
         $validated = $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
@@ -43,6 +44,13 @@ class AdminAuthController extends Controller
         ]);
 
         return redirect()->intended(route('admin.dashboard'));
+    }
+
+    public function dashboard(Request $request): Response
+    {
+        return Inertia::render('Admin/Dashboard', [
+            'username' => (string) $request->session()->get('admin.username'),
+        ]);
     }
 
     public function destroy(Request $request): RedirectResponse

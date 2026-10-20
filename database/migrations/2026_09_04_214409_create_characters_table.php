@@ -16,7 +16,11 @@ return new class extends Migration
             $table->timestamps();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name')->unique();
-            $table->json('data')->nullable();
+            $table->string('class')->nullable();
+            $table->string('status')->nullable();
+            $table->string('area')->nullable();
+            $table->integer('x')->nullable();
+            $table->integer('y')->nullable();
         });
     }
 

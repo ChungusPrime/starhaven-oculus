@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'data', 'user_id'])]
+#[Fillable(['name', 'status', 'area', 'user_id', 'x', 'y'])]
 #[Hidden([])]
 class Character extends Model
 {
@@ -28,7 +28,11 @@ class Character extends Model
     {
         return [
             'user_id' => 'integer',
-            'data' => 'string',
+            'status' => 'string',
+            'area' => 'string',
+            'name' => 'string',
+            'x' => 'integer',
+            'y' => 'integer',
         ];
     }
 
